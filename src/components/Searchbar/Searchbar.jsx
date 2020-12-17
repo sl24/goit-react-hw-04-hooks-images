@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PropTypes from 'prop-types';
@@ -10,53 +10,46 @@ import {
   SearchFormInput,
 } from './SearchbarStyle';
 
-class Searchbar extends Component {
-  state = {
-    search: '',
-  };
+function Searchbar({ onSubmitForm }) {
+  const [search, setSearch] = useState('');
 
-  handelSearch = ({ target }) => {
+  const handelSearch = ({ target }) => {
     const { value } = target;
-    this.setState({ search: value });
+    setSearch(value);
   };
 
-  handleSubmit = event => {
+  const handleSubmit = event => {
     event.preventDefault();
-    const { search } = this.state;
 
     if (search.trim() === '') {
       return toast.error('Please enter something to start your search!');
     }
 
-    this.props.onSubmitForm(search);
-    this.reset();
+    onSubmitForm(search);
+    reset();
   };
 
-  reset = () => {
-    this.setState({ search: '' });
+  const reset = () => {
+    setSearch('');
   };
 
-  render() {
-    const { search } = this.state;
-
-    return (
-      <SearchbarContainer>
-        <SearchForm onSubmit={this.handleSubmit}>
-          <SearchFormButton type="submit">
-            <SearchFormButtonLabel>Search</SearchFormButtonLabel>
-          </SearchFormButton>
-          <SearchFormInput
-            onChange={this.handelSearch}
-            value={search}
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-          />
-        </SearchForm>
-      </SearchbarContainer>
-    );
-  }
+  return (
+    <SearchbarContainer>
+      <SearchForm onSubmit={handleSubmit}>
+        <SearchFormButton type="submit">
+          <SearchFormButtonLabel>Search</SearchFormButtonLabel>
+        </SearchFormButton>
+        <SearchFormInput
+          onChange={handelSearch}
+          value={search}
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+        />
+      </SearchForm>
+    </SearchbarContainer>
+  );
 }
 
 Searchbar.propTypes = {
