@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 
 import fetchImgWithQuery from '../../services';
@@ -10,108 +10,83 @@ import Modal from '../Modal';
 
 import { Container, ErrorText } from './AppStyle';
 
-class App extends Component {
-  state = {
-    search: '',
-    page: 1,
-    imgArray: [],
-    isLoading: false,
-    showModal: false,
-    largeImageURL: '',
-    error: null,
-  };
+function App() {
+  const [search, setSearch] = useState(null);
+  const [page, setPage] = useState(1);
+  const [imgArray, setImgArray] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState('');
+  const [error, setError] = useState(null);
 
-  onSubmitForm = async data => {
-    this.setState({ search: data, page: 1, isLoading: true, error: null });
-
-    try {
-      const request = await fetchImgWithQuery(data);
-      this.setState(({ page }) => ({ imgArray: [...request], page: page + 1 }));
-      this.scrollImg();
-    } catch (error) {
-      this.setState({ error });
-    } finally {
-      this.setState({ isLoading: false });
+  useEffect(() => {
+    async function fetchMyAPI() {
+      try {
+        const request = await fetchImgWithQuery(search, page);
+        await setImgArray(prevArray => [...prevArray, ...request]);
+        scrollImg();
+      } catch (error) {
+        setError(error);
+      } finally {
+        setIsLoading(false);
+      }
     }
+
+    if (search) fetchMyAPI();
+  }, [search, page]);
+
+  const onSubmitForm = data => {
+    setSearch(data);
+    setPage(1);
+    setIsLoading(true);
+    setError(null);
+    setImgArray([]);
   };
 
-  uploadMorePhotos = async () => {
-    const { search, page } = this.state;
-    this.setState({ isLoading: true });
-
-    try {
-      const request = await fetchImgWithQuery(search, page);
-      this.setState(({ imgArray, page }) => ({
-        imgArray: [...imgArray, ...request],
-        page: page + 1,
-      }));
-      this.scrollImg();
-    } catch (error) {
-      this.setState({ error });
-    } finally {
-      this.setState({ isLoading: false });
-    }
+  const uploadMorePhotos = () => {
+    setIsLoading(true);
+    setPage(prevPage => prevPage + 1);
   };
 
-  scrollImg = () => {
+  const scrollImg = () => {
     window.scrollTo({
       top: document.documentElement.scrollHeight,
       behavior: 'smooth',
     });
   };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({ showModal: !showModal }));
+  const toggleModal = () => {
+    setShowModal(prevShowModal => !prevShowModal);
   };
 
-  onClickImage = largeImageURL => {
-    this.setState({ largeImageURL: largeImageURL });
-    this.toggleModal();
+  const onClickImage = largeImageURL => {
+    setLargeImageURL(largeImageURL);
+    toggleModal();
   };
 
-  render() {
-    const {
-      imgArray,
-      isLoading,
-      showModal,
-      largeImageURL,
-      error,
-      search,
-    } = this.state;
-    const imgFound = imgArray.length > 0 && !error;
-    const imgNotFound = search && imgArray.length === 0 && !error && !isLoading;
+  const imgFound = imgArray.length > 0 && !error;
+  const imgNotFound = search && imgArray.length === 0 && !error && !isLoading;
 
-    return (
-      <Container>
-        <Searchbar onSubmitForm={this.onSubmitForm} />
-        {error && (
-          <ErrorText>Whoops, something went wrong. Try again.</ErrorText>
-        )}
-        {imgFound && (
-          <>
-            <ImageGallery
-              onClickImage={this.onClickImage}
-              imgArray={imgArray}
-            />
-            {!isLoading && <Button uploadMorePhotos={this.uploadMorePhotos} />}
-            {isLoading && <PreLoader />}
-            {showModal && (
-              <Modal
-                largeImageURL={largeImageURL}
-                toggleModal={this.toggleModal}
-              />
-            )}
-          </>
-        )}
-        {imgNotFound && (
-          <ErrorText>
-            No results were found for your search. Try again.
-          </ErrorText>
-        )}
-        <ToastContainer autoClose={3000} />
-      </Container>
-    );
-  }
+  return (
+    <Container>
+      <Searchbar onSubmitForm={onSubmitForm} />
+      {error && <ErrorText>Whoops, something went wrong. Try again.</ErrorText>}
+      {imgFound && (
+        <>
+          <ImageGallery onClickImage={onClickImage} imgArray={imgArray} />
+          {!isLoading && <Button uploadMorePhotos={uploadMorePhotos} />}
+          {isLoading && <PreLoader />}
+          {showModal && (
+            <Modal largeImageURL={largeImageURL} toggleModal={toggleModal} />
+          )}
+        </>
+      )}
+      {imgNotFound && (
+        <ErrorText>No results were found for your search. Try again.</ErrorText>
+      )}
+      <ToastContainer autoClose={3000} />
+    </Container>
+  );
 }
 
 export default App;
